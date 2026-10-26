@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     Automatically reads configurations from environment variables and validate them at runtime.
     """
 
+    # Loading the configs from .env file
     model_config=SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -47,3 +48,10 @@ class Settings(BaseSettings):
     # Ingestion mode
     # Async temporal ingestion. In case if temporal is down -> ingest using sync process
     use_temporal_ingestion: bool=False
+
+    # RAGAS (evaluation related configs)
+    enable_ragas_evaluation: bool=False
+
+
+def get_settings()->Settings:
+    return Settings()

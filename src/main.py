@@ -1,6 +1,17 @@
+from controllers import health_controller
+from dotenv import load_dotenv
+from configs.settings import get_settings
 from fastapi import FastAPI
 
-app=FastAPI()
+load_dotenv()
+
+settings=get_settings()
+
+app=FastAPI(
+    title=settings.app_name
+)
+
+app.include_router(health_controller.router)
 
 @app.get("/")
 async def hello()->dict[str, str]:
