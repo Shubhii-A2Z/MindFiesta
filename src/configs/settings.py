@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings import BaseSettings
 
@@ -16,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # Groq related configs
-    groq_api_key: str=""
+    google_api_key: str=""
 
     # Qdrant related configs
     qdrant_url: str=""
@@ -53,5 +54,6 @@ class Settings(BaseSettings):
     enable_ragas_evaluation: bool=False
 
 
+@lru_cache
 def get_settings()->Settings:
     return Settings()
