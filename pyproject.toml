@@ -1,0 +1,37 @@
+[project]
+name = "youtubetranscriptrag"
+version = "0.1.0"
+description = "RAG application with FastAPI, Qdrant, and Temporal"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "datasets>=3.0.0",
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-groq>=0.2.0",
+    "langchain-qdrant>=0.2.0",
+    "langchain-text-splitters>=0.3.0",
+    "langsmith==0.4.55",
+    "pydantic-settings>=2.6.0",
+    "pypdf>=5.0.0",
+    "python-docx>=1.1.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.12",
+    "qdrant-client>=1.12.0",
+    "ragas==0.3.7",
+    "temporalio>=1.8.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.scripts]
+youtubetranscriptrag = "src.main:main"
+
+[build-system]
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""
