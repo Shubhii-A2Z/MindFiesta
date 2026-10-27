@@ -113,7 +113,7 @@ class DocumentService:
 
     def process_file(self, file_path: Path, source_name: str | None=None)->list[Document]:
         """
-        Process a single file by loading and splitting it into chunks.
+        Process a single file by loading into list of langchain documents and splitting it into chunks.
         """
         documents=self.load_documents(file_path=file_path, source_name=source_name)
         return self.split_documents(documents=documents)

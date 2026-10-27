@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     # Ingestion mode
     # Async temporal ingestion. In case if temporal is down -> ingest using sync process
     use_temporal_ingestion: bool=False
+    upload_dir: str="uploads"
 
     # RAGAS (evaluation related configs)
     enable_ragas_evaluation: bool=False
