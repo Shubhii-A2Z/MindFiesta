@@ -24,9 +24,11 @@ class VectorStoreRepository:
         # Vector store for the application
         self._vector_store: QdrantVectorStore | None=None
 
+
     # Property decorator used so that we can use it like "self.vector_store" without parentheses
     @property
     def vector_store(self)->QdrantVectorStore:
+        """Getter for the vector store db instance"""
         if self._vector_store is None:
             self._vector_store=QdrantVectorStore(
                 client=self.client,
@@ -70,3 +72,21 @@ class VectorStoreRepository:
 
     def delete_collection(self)->None:
         self.client.delete_collection(collection_name=self.collection_name)
+    
+
+    def similarity_search_with_scores(self, user_query: str, k: int | None=None)->list[tuple[Document, float]]:
+        """
+        Search the vector store for top k documents similar to the user query,
+        along with their similarity scores.
+        """
+        settings=get_settings()
+        k=k or settings.retrieval_k
+
+        return self.vector_store.similarity_search_with_score(query=user_query, k=k)
+    
+
+    def similarity_search(self, user_query: str, k: int | None=None)->list[Document]:
+        settings=get_settings()
+        k=k or settings.retrieval_k
+
+        return self.vector_store.similarity_search(query=user_query, k=k)
