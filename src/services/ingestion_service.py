@@ -16,7 +16,14 @@ class IngestionService:
 
 
     def save_upload_batch(self, file_pairs: list[tuple[str, bytes]])->tuple[str, list[Path]]:
-        """Save batch of files to the upload directory on local machine"""
+        """
+        Save batch of files to the upload directory on local machine
+
+        Args:
+            list of tuples containing (file_name, file_content)
+        Returns:
+            tuple of (batch_id, list of file paths created for each file)
+        """
 
         batch_id=str(uuid.uuid4())
         batch_directory=Path(self.settings.upload_dir) / batch_id
