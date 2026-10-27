@@ -1,3 +1,4 @@
+from src.utils.logger import get_logger
 import uuid
 from langchain_core.documents import Document
 from qdrant_client.conversions.common_types import Distance
@@ -9,6 +10,7 @@ from langchain_qdrant import QdrantVectorStore
 from doctest import UnexpectedException
 
 EMBEDDING_DIMENSIONS=1536
+logger=get_logger(__name__)
 
 class VectorStoreRepository:
 
@@ -44,8 +46,9 @@ class VectorStoreRepository:
         """
         try:
             _info=self.client.get_collection(collection_name=self.collection_name)
+            logger.info(f"Collection {self.collection_name} found with info {_info}")
         except UnexpectedException:
-            print(f"Collection {self.collection_name} not found. Creating ...")
+            logger.warning(f"Collection {self.collection_name} not found. Creating ...")
 
             self.client.create_collection(
                 collection_name=self.collection_name,
