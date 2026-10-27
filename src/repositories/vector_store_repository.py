@@ -1,3 +1,5 @@
+import uuid
+from langchain_core.documents import Document
 from qdrant_client.conversions.common_types import Distance
 from qdrant_client.conversions.common_types import VectorParams
 from src.services.embedding_service import get_embeddings
@@ -22,7 +24,8 @@ class VectorStoreRepository:
         # Vector store for the application
         self._vector_store: QdrantVectorStore | None=None
 
-
+    # Property decorator used so that we can use it like "self.vector_store" without parentheses
+    @property
     def vector_store(self)->QdrantVectorStore:
         if self._vector_store is None:
             self._vector_store=QdrantVectorStore(
@@ -50,4 +53,20 @@ class VectorStoreRepository:
                     distance=Distance.COSINE, # Cosine similarity
                 )
             )
+    
 
+    def add_documents(self, documents: list[Document])->list[str]:
+        if documents is None:
+            return []
+        
+        # Create unique ids for each document
+        ids=[str(uuid.uuid4()) for _ in documents]
+
+        # Adding documents to vector store db
+        self.vector_store.add_documents(documents=documents, ids=ids)
+
+        return ids
+    
+
+    def delete_collection(self)->None:
+        self.client.delete_collection(collection_name=self.collection_name)
