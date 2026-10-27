@@ -1,4 +1,4 @@
-from datasets.utils.logging import get_logger
+from src.utils.logger import get_logger
 import uuid
 from pathlib import Path
 from src.repositories.vector_store_repository import VectorStoreRepository

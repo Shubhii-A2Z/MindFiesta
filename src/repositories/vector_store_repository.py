@@ -2,14 +2,13 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from src.utils.logger import get_logger
 import uuid
 from langchain_core.documents import Document
-from qdrant_client.conversions.common_types import Distance
-from qdrant_client.conversions.common_types import VectorParams
+from qdrant_client.models import Distance, VectorParams
 from src.services.embedding_service import get_embeddings
 from src.configs.qdrant_config import get_qdrant_client
 from configs.settings import get_settings
 from langchain_qdrant import QdrantVectorStore
 
-EMBEDDING_DIMENSIONS=1536
+EMBEDDING_DIMENSIONS=3072
 logger=get_logger(__name__)
 
 class VectorStoreRepository:
