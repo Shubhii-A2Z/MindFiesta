@@ -9,7 +9,7 @@ logger=get_logger(__name__)
 
 class DocumentService:
     """Service for Document Processing"""
-    
+
 
     def __init__(self, chunk_size: int | None=None, chunk_overlap: int | None=None):
         settings=get_settings()
@@ -57,3 +57,10 @@ class DocumentService:
         
         logger.info(f"Extracted and loaded {len(documents)} documents from {file_path}")
         return documents
+
+
+    def split_documents(self, documents: list[Document])->list[Document]:
+        """
+        Split langchain documents into chunks for better processing.
+        """
+        return self.text_splitter.split_documents(documents)
