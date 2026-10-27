@@ -1,5 +1,4 @@
-from src.exceptions.unsupported_file_error import UnsupportedFileError
-import csv
+from src.services.factories.document_loader_factory import DocumentLoaderFactory
 from pathlib import Path
 from src.utils.logger import get_logger
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -10,20 +9,6 @@ logger=get_logger(__name__)
 
 class DocumentService:
     """Service for Document Processing"""
-
-    SUPPORTED_FILE_EXTENSIONS={".csv"}
-
-    TRANSCRIPT_CSV_FIELDNAMES={
-        "id",
-        "start",
-        "end",
-        "text",
-        "url",
-        "channel_id",
-        "title",
-        "published",
-    }
-    
 
     def __init__(self, chunk_size: int | None=None, chunk_overlap: int | None=None):
         settings=get_settings()
@@ -38,70 +23,12 @@ class DocumentService:
         )
 
 
-    def _is_transcript_csv(self, file_path: Path)->bool:
-        """Check if the file is valid transcript csv"""
-        with file_path.open(newline="", encoding="utf-8") as file:
-            reader=csv.DictReader(file)
-
-            if not reader.fieldnames:
-                return False
-            
-            fields=set[str](reader.fieldnames)
-            return self.TRANSCRIPT_CSV_FIELDNAMES.issubset(fields)
-
-
-    def load_transcript_csv(self, file_path: Path, source_name: str)->list[Document]:
-        """Load a transcript csv file into list of Documents. Every row will be a document in vector db"""
-
-        documents: list[Document]=[]
-
-        with file_path.open("r", encoding="utf-8") as file:
-            # Reading CSV as key-value pairs, one row as one dictionary
-            # e.g. [{'text': 'Hello', 'start': '0', 'end': '1'}, {'text': 'World', 'start': '1', 'end': '2'}]
-            reader=csv.DictReader(file)
-
-            # going to every row/dictionary
-            for row in reader:
-                text=row.get("text").strip()
-
-                if not text:
-                    continue
-
-                metadata={
-                    "source": source_name,
-                    "id": row.get("id"),
-                    "start": row.get("start"),
-                    "end": row.get("end"),
-                    "url": row.get("url"),
-                    "channel_id": row.get("channel_id"),
-                    "title": row.get("title"),
-                    "published": row.get("published"),
-                }
-
-                # Creating Document object for this row
-                documents.append(Document(page_content=text, metadata=metadata))
-        
-        logger.info(f"Extracted and loaded {len(documents)} documents from {file_path}")
-        return documents
-    
-
     def load_documents(self, file_path: Path, source_name: str | None=None)->list[Document]:
-        file_path=Path(file_path)
-        source=source_name or file_path.name
+        document_loader=DocumentLoaderFactory.get_loader(file_path=file_path)
+        documents=document_loader.load(file_path=file_path, source_name=source_name)
 
-        # Getting the document extension type (.csv, .txt, .pdf, etc)
-        file_extension=file_path.suffix.lower()
-
-        if file_extension not in self.SUPPORTED_FILE_EXTENSIONS:
-            raise UnsupportedFileError(f"Unsupported file type: {file_extension}")
-
-        if file_extension==".csv":
-            if self._is_transcript_csv(file_path):
-                docs=self.load_transcript_csv(file_path=file_path, source_name=source)
-            else:
-                raise ValueError(f"Unsupported CSV file: {file_path}")
-        
-        return docs
+        logger.info(f"Loaded {len(documents)} documents from {file_path}")
+        return documents
 
 
     def split_documents(self, documents: list[Document])->list[Document]:
