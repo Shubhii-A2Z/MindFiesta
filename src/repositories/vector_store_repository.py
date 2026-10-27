@@ -1,3 +1,4 @@
+from qdrant_client.http.exceptions import UnexpectedResponse
 from src.utils.logger import get_logger
 import uuid
 from langchain_core.documents import Document
@@ -7,7 +8,6 @@ from src.services.embedding_service import get_embeddings
 from src.configs.qdrant_config import get_qdrant_client
 from configs.settings import get_settings
 from langchain_qdrant import QdrantVectorStore
-from doctest import UnexpectedException
 
 EMBEDDING_DIMENSIONS=1536
 logger=get_logger(__name__)
@@ -47,7 +47,7 @@ class VectorStoreRepository:
         try:
             _info=self.client.get_collection(collection_name=self.collection_name)
             logger.info(f"Collection {self.collection_name} found with info {_info}")
-        except UnexpectedException:
+        except UnexpectedResponse:
             logger.warning(f"Collection {self.collection_name} not found. Creating ...")
 
             self.client.create_collection(
@@ -63,6 +63,9 @@ class VectorStoreRepository:
     def add_documents(self, documents: list[Document])->list[str]:
         if documents is None:
             return []
+        
+        # Ensuring collection exists before adding the documents to vector db
+        self._ensure_collection_exists()
         
         # Create unique ids for each document
         ids=[str(uuid.uuid4()) for _ in documents]
