@@ -1,3 +1,4 @@
+from src.exceptions.unsupported_file_error import UnsupportedFileError
 import csv
 from pathlib import Path
 from src.utils.logger import get_logger
@@ -82,6 +83,25 @@ class DocumentService:
         
         logger.info(f"Extracted and loaded {len(documents)} documents from {file_path}")
         return documents
+    
+
+    def load_documents(self, file_path: Path, source_name: str | None=None)->list[Document]:
+        file_path=Path(file_path)
+        source=source_name or file_path.name
+
+        # Getting the document extension type (.csv, .txt, .pdf, etc)
+        file_extension=file_path.suffix.lower()
+
+        if file_extension not in self.SUPPORTED_FILE_EXTENSIONS:
+            raise UnsupportedFileError(f"Unsupported file type: {file_extension}")
+
+        if file_extension==".csv":
+            if self._is_transcript_csv(file_path):
+                docs=self.load_transcript_csv(file_path=file_path, source_name=source)
+            else:
+                raise ValueError(f"Unsupported CSV file: {file_path}")
+        
+        return docs
 
 
     def split_documents(self, documents: list[Document])->list[Document]:
@@ -89,3 +109,30 @@ class DocumentService:
         Split langchain documents into chunks for better processing.
         """
         return self.text_splitter.split_documents(documents)
+    
+
+    def process_file(self, file_path: Path, source_name: str | None=None)->list[Document]:
+        """
+        Process a single file by loading and splitting it into chunks.
+        """
+        documents=self.load_documents(file_path=file_path, source_name=source_name)
+        return self.split_documents(documents=documents)
+
+
+"""
+Enhancement using Strategy Design Pattern:
+
+-> Instead of using if-elif chain for different document types in load_documents(), we can use strategy design pattern.
+
+-> We can define a strategy interface "DocumentLoaderStrategy" with a method "load(file_path, source_name)"
+and implement it for different document types like "CsvLoaderStrategy", "PdfLoaderStrategy", etc.
+
+-> Instead of using if-elif and creating objects,
+We create a Factory class "DocumentLoaderFactory" for document loading that will return the appropriate strategy based on file extension.
+
+-> e.g loader: DocumentLoaderStrategy=DocumentLoaderFactory.get_loader(file_path)
+    docs=loader.load(file_path, source_name)
+
+-> Benefits:
+    -> Adding new file type support becomes easier. We just need to add new strategy class and update the factory.
+"""
