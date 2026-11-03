@@ -1,3 +1,4 @@
+from src.dtos.ingestion_status_response import IngestionStatusResponse
 from src.dtos.async_ingestion_started_response import AsyncIngestionStartedResponse
 from src.utils.temporal_helper import use_temporal
 from src.dtos.document_ingestion_response_dto import DocumentIngestionResponseDTO
@@ -74,4 +75,37 @@ async def upload_documents(files: list[UploadFile]=File(...,description="The fil
         files=payload.get("files"),
         total_files=payload.get("total_files"),
         message=payload.get("message")
+    )
+
+
+@router.get(
+    "/ingestion/{workflow_id}",
+    response_model=IngestionStatusResponse,
+    summary="Get the status of asynchronous ingestion workflow"
+)
+async def get_ingestion_status(workflow_id: str)->IngestionStatusResponse:
+    """Get status of asynchronous ingestion workflow"""
+
+    if not use_temporal():
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_ACCEPTABLE,
+            detail="Asynchronous Temporal ingestion is not enabled."
+        )
+    
+    from src.services.temporal_ingestion_service import TemporalIngestionService
+
+    temporal_service=TemporalIngestionService()
+
+    try:
+        result=await temporal_service.get_ingestion_status(workflow_id=workflow_id)
+    except Exception as e:
+        logger.error(f"Error getting ingestion status: {e}")
+        raise HTTPException(HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+    
+    return IngestionStatusResponse(
+        workflow_id=workflow_id,
+        batch_id=result.get("batch_id"),
+        status=result.get("status"),
+        files_total=result.get("files_total"),
+        message=result.get("message")
     )
