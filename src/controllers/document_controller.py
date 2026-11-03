@@ -50,13 +50,7 @@ async def upload_documents(files: list[UploadFile]=File(...,description="The fil
             logger.error(f"Error starting temporal ingestion: {e}")
             raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
         
-        return AsyncIngestionStartedResponse(
-            workflow_id=result.get("workflow_id"),
-            batch_id=result.get("batch_id"),
-            files_total=result.get("files_total"),
-            filenames=result.get("filenames"),
-            message=result.get("message")
-        )
+        return AsyncIngestionStartedResponse(**result)
     
     # Fallbacking to synchronous ingestion method
     service=IngestionService()
@@ -102,10 +96,4 @@ async def get_ingestion_status(workflow_id: str)->IngestionStatusResponse:
         logger.error(f"Error getting ingestion status: {e}")
         raise HTTPException(HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
     
-    return IngestionStatusResponse(
-        workflow_id=workflow_id,
-        batch_id=result.get("batch_id"),
-        status=result.get("status"),
-        files_total=result.get("files_total"),
-        message=result.get("message")
-    )
+    return IngestionStatusResponse(**result)

@@ -1,5 +1,4 @@
 from src.repositories.vector_store_repository import VectorStoreRepository
-from ast import Dict
 from pathlib import Path
 from src.services.document_service import DocumentService
 from temporalio import activity
@@ -8,7 +7,7 @@ from langchain_core.documents import Document
 
 logger=get_logger(__name__)
 
-def _to_dict(documents: list[Document])->list[Dict]:
+def _to_dict(documents: list[Document])->list[dict]:
     return [
         {
             "page_content": doc.page_content,
@@ -31,7 +30,7 @@ def _from_dict(documents: list[dict])->list[Document]:
 async def parse_document_activity(local_path: str, filename: str)->list[dict]:
     """Temporal activity to parse a document"""
 
-    activity.logger(f"Parsing documents from {local_path} with filename {filename}")
+    activity.logger.info(f"Parsing documents from {local_path} with filename {filename}")
     service=DocumentService()
     documents=service.load_documents(Path(local_path), source_name=filename)
     return _to_dict(documents)
@@ -41,7 +40,7 @@ async def parse_document_activity(local_path: str, filename: str)->list[dict]:
 async def chunk_document_activity(documents: list[dict])->list[dict]:
     """Temporal activity to chunk documents"""
     
-    activity.logger(f"Chunking {len(documents)} documents")
+    activity.logger.info(f"Chunking {len(documents)} documents")
     service=DocumentService()
     documents=service.split_documents(_from_dict(documents))
     return _to_dict(documents)
@@ -63,6 +62,6 @@ async def index_document_activity(chunks: list[dict])->int:
     ids=repository.add_documents(documents=chunks)
 
     # Logging the number of chunks indexed
-    activity.logger(f"Indexed {len(chunks)} documents")
+    activity.logger.info(f"Indexed {len(chunks)} documents")
     
     return len(chunks)

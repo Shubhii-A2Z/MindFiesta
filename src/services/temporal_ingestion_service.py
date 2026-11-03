@@ -42,7 +42,7 @@ class TemporalIngestionService:
             "workflow_id": handle.id,
             "batch_id": batch_id,
             "files_total": len(files),
-            "files_name": [file.filename for file in files]
+            "file_names": [file.filename for file in files]
         }
     
     async def get_ingestion_status(self, workflow_id: str)->dict:

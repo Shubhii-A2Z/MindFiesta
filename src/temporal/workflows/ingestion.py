@@ -1,7 +1,6 @@
 from datetime import timedelta
-from configs.settings import get_settings
 from temporalio import workflow
-from dataclasses import Field
+from dataclasses import field
 from typing import Any
 from dataclasses import dataclass
 
@@ -14,6 +13,7 @@ with workflow.unsafe.imports_passed_through():
         index_document_activity
     )
 
+INDEX_BATCH_SIZE=100
 
 @dataclass
 class FileIngestInput:
@@ -31,7 +31,7 @@ class BatchIngestProgress:
     files_total: int=0
     files_completed: int=0
     current_filename: str | None=None
-    file_results: list[dict[str, Any]]=Field(default_factory=list)
+    file_results: list[dict[str, Any]]=field(default_factory=list)
 
 
 @workflow.defn(name="batch-ingestion-workflow")
@@ -44,7 +44,6 @@ class BatchIngestionWorkflow:
 
     def __init__(self)->None:
         self.progress=BatchIngestProgress()
-        self.settings=get_settings()
 
 
     # This method defines what happens when an external query comes in
@@ -58,7 +57,7 @@ class BatchIngestionWorkflow:
     async def run(self, files: list[FileIngestInput])->BatchIngestProgress:
         """Runs the batch ingestion workflow"""
 
-        batch_size=self.settings.index_batch_size
+        batch_size=INDEX_BATCH_SIZE
         self.progress.files_total=len(files)
         self.progress.status="RUNNING"
 
@@ -70,7 +69,7 @@ class BatchIngestionWorkflow:
             # running activity 1: parsing the documents
             document_dictionary=await workflow.execute_activity(
                 parse_document_activity,
-                args=[file_input.local_path, file_input.name],
+                args=[file_input.local_path, file_input.filename],
                 start_to_close_timeout=timedelta(minutes=30) # if activity isnt completed in 30 min, it will be terminated
             )
 
