@@ -47,6 +47,7 @@ class BatchIngestionWorkflow:
         self.settings=get_settings()
 
 
+    # This method defines what happens when an external query comes in
     @workflow.query
     def get_progress(self)->BatchIngestProgress:
         """Returns the current progress of workflow"""
