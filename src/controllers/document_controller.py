@@ -1,8 +1,7 @@
+from src.controllers.strategies.ingestion_strategy import IngestionResponse
+from src.controllers.factories.ingestion_strategy_factory import IngestionStrategyFactory
 from src.dtos.ingestion_status_response import IngestionStatusResponse
-from src.dtos.async_ingestion_started_response import AsyncIngestionStartedResponse
 from src.utils.temporal_helper import use_temporal
-from src.dtos.document_ingestion_response_dto import DocumentIngestionResponseDTO
-from src.services.ingestion_service import IngestionService
 from http import HTTPStatus
 from fastapi import HTTPException
 from configs.settings import get_settings
@@ -15,7 +14,11 @@ logger=get_logger(__name__)
 
 router=APIRouter(prefix="/documents", tags=["documents"])
 
-@router.post("/upload", summary="Upload documents for indexing")
+@router.post(
+    "/upload",
+    response_model=IngestionResponse,
+    summary="Upload documents for indexing"
+)
 async def upload_documents(files: list[UploadFile]=File(...,description="The files to upload")):
     settings=get_settings()
 
@@ -35,41 +38,13 @@ async def upload_documents(files: list[UploadFile]=File(...,description="The fil
         if not content:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=f"File {file.filename} is empty.")
         file_pairs.append((file.filename, content))
-    
-    # Starting temporal driven async ingestion process if temporal is enabled
-    if use_temporal():
-
-        # Importing the temporal ingestion service only if temporal is enabled
-        from src.services.temporal_ingestion_service import TemporalIngestionService
-
-        temporal_service=TemporalIngestionService()
-
-        try:
-            result=await temporal_service.start_batch_ingestion(file_pairs=file_pairs)
-        except Exception as e:
-            logger.error(f"Error starting temporal ingestion: {e}")
-            raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-        
-        return AsyncIngestionStartedResponse(**result)
-    
-    # Fallbacking to synchronous ingestion method
-    service=IngestionService()
 
     try:
-        payload=service.ingest_file_sync(file_pairs=file_pairs)
-    except ValueError as e:
-        logger.error(f"Error ingesting files: {e}")
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
+        ingestion_strategy=IngestionStrategyFactory.get_ingestion_strategy()
+        return await ingestion_strategy.execute(file_pairs=file_pairs)
     except Exception as e:
-        logger.error(f"Unexpected Error ingesting files: {e}")
+        logger.error(f"Unexpected error ingestion files: {e}")
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-    
-    return DocumentIngestionResponseDTO(
-        chunks_created=payload.get("chunks_created"),
-        files=payload.get("files"),
-        total_files=payload.get("total_files"),
-        message=payload.get("message")
-    )
 
 
 @router.get(
