@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from src.utils.logger import get_logger
 import uuid
 from pathlib import Path
@@ -41,7 +42,11 @@ class IngestionService:
         return batch_id, paths
 
 
-    def ingest_file_at_path(self, file_path: Path, source_name: str | None=None)->dict:
+    def ingest_file_at_path(self,
+        file_path: Path, source_name: str | None=None,
+        *,
+        index_batch_size: int | None=None,
+        on_index_callable: Callable[[int, int], None] | None=None)->dict:
         """Ingest a single file located at file_path into vector store."""
 
         name=source_name or file_path.name
@@ -50,10 +55,25 @@ class IngestionService:
         chunks=self.document_service.process_file(file_path=file_path, source_name=name)
         if not chunks:
             return {"filename": name, "chunks_created": 0, "document_ids": []}
+
+        batch_size=index_batch_size or self.settings.index_batch_size
+
+        ids: list[str]=[]
+
+        # Now instead of adding all the chunks at once in vector store, we are adding them in batches of batch_size
+        for start in range(0, len(chunks), batch_size):
+            # Taking the next batch_size chunks from chunks list
+            batch=chunks[start : start+batch_size]
+            ids.extend(self.vector_store_repository.add_documents(documents=batch))
+
+            if on_index_callable is not None:
+                on_index_callable(min(start+len(batch), len(chunks)), len(chunks))
         
-        # adding the chunks to the vector store
-        ids=self.vector_store_repository.add_documents(documents=chunks)
-        return {"filename": name, "chunks_created": len(chunks), "document_ids": ids}
+        return {
+            "filename": name,
+            "chunks_created": len(chunks),
+            "document_ids": ids,
+        }
 
 
     def ingest_file_sync(self, file_pairs: list[tuple[str, bytes]])->dict:

@@ -1,3 +1,5 @@
+from src.services.ingestion_service import IngestionService
+from src.configs.settings import get_settings
 from src.repositories.vector_store_repository import VectorStoreRepository
 from pathlib import Path
 from src.services.document_service import DocumentService
@@ -24,6 +26,32 @@ def _from_dict(documents: list[dict])->list[Document]:
         Document(page_content=doc["page_content"], metadata=doc["metadata"])
         for doc in documents
     ]
+
+@activity.defn(name="ingest_file_activity")
+async def ingest_file_activity(
+    local_path: str,
+    filename: str,
+    batch_size: int | None=None
+)->int:
+    """Temporal activity to ingest a file"""
+
+    settings=get_settings()
+    batch_size=batch_size or settings.index_batch_size
+
+    activity.logger.info(f"Ingesting file {filename} from {local_path} with batch_size {batch_size}")
+
+    def _heartbeat(indexed: int, total: int)->None:
+        activity.heartbeat(f"Indexed {indexed} of {total} chunks")
+
+    service=IngestionService()
+    result=service.ingest_file_at_path(
+        file_path=Path(local_path),
+        source_name=filename,
+        index_batch_size=batch_size,
+        on_index_callable=_heartbeat
+    )
+
+    return result["chunks_created"]
 
 
 @activity.defn(name="parse_document_activity")
