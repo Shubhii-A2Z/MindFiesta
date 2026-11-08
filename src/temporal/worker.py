@@ -8,7 +8,8 @@ from temporalio.worker import Worker
 from src.temporal.activities.ingestion import (
     parse_document_activity,
     chunk_document_activity,
-    index_document_activity
+    index_document_activity,
+    ingest_file_activity
 )
 
 logger=get_logger(__name__)
@@ -26,7 +27,8 @@ async def main()->None:
         activities=[ # What all activities the worker can run
             parse_document_activity,
             chunk_document_activity,
-            index_document_activity
+            index_document_activity,
+            ingest_file_activity
         ]
     )
 
