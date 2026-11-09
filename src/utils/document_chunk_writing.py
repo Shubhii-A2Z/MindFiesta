@@ -16,14 +16,14 @@ def spill_path_for_upload(upload_path: Path, filename: str, stage: str)->Path:
     Args:
         upload_path: The path to the upload file
         filename: The name of the file
-        stage: The stage of the file
+        stage: The stage of the file e.g. (parsed, chunks)
     Returns:
-        The path to the spill file
+        The path to the spill file e.g. (file1.parsed.jsonl, file1.chunks.jsonl)
     """
 
     # Getting the stem of file without its extension
     filestem=Path(upload_path).stem
-    return staging_directory_upload(upload_path=upload_path) / f"{filestem}.{stage}.jsonl"
+    return staging_directory_upload(upload_path=upload_path) / f"{filestem}.{stage}.jsonl" # Alternative format -> staging_directory_upload() / {stage} / {stem}.jsonl
 
 
 def write_documents_to_jsonl(path: Path, documents: list[Document])->int:
@@ -58,7 +58,7 @@ def read_documents_from_jsonl_batch(path: Path, offset: int, limit: int)->list[D
     Returns:
         The list of documents read from the file
     """
-    
+
     documents=[]
 
     if limit<=0:

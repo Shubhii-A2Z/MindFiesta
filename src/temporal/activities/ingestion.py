@@ -1,3 +1,6 @@
+from src.utils.document_chunk_writing import count_jsonl_lines
+from src.utils.document_chunk_writing import write_documents_to_jsonl
+from src.utils.document_chunk_writing import spill_path_for_upload
 from src.services.ingestion_service import IngestionService
 from src.configs.settings import get_settings
 from src.repositories.vector_store_repository import VectorStoreRepository
@@ -93,3 +96,24 @@ async def index_document_activity(chunks: list[dict])->int:
     activity.logger.info(f"Indexed {len(chunks)} documents")
     
     return len(chunks)
+
+
+@activity.defn(name="parse_documents_to_jsonl_activity")
+async def parse_documents_to_jsonl_activity(local_path: Path, filename: str)->dict:
+    """Activity to parse documents from local path and write them to a jsonl file at the disk/write path"""
+
+    upload_path=Path(local_path)
+    write_path=spill_path_for_upload(upload_path=upload_path, filename=filename, stage="parsed")
+
+    activity.logger.info(f"Parsing documents from {local_path} with filename {filename} to {write_path}")
+    service=DocumentService()
+    docs=service.load_documents(upload_path, filename)
+
+    count=write_documents_to_jsonl(path=write_path, documents=docs)
+    line_count=count_jsonl_lines(path=write_path)
+
+    return {
+        "write_path": write_path,
+        "line_count": line_count,
+        "staged": "parsed"
+    }
