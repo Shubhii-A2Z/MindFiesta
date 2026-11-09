@@ -1,3 +1,4 @@
+from typing import Any
 from qdrant_client.http.exceptions import UnexpectedResponse
 from src.utils.logger import get_logger
 import uuid
@@ -95,3 +96,12 @@ class VectorStoreRepository:
         k=k or settings.retrieval_k
 
         return self.vector_store.similarity_search(query=user_query, k=k)
+
+
+    def get_retriever(self, k: int | None=None)->Any:
+        """
+        Get the retriever for the vector store"""
+        settings=get_settings()
+        k=k or settings.retrieval_k
+
+        return self.vector_store.as_retriever(search_kwargs={"k": k}, search_type="similarity")
