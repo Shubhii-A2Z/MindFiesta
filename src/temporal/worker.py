@@ -9,7 +9,10 @@ from src.temporal.activities.ingestion import (
     parse_document_activity,
     chunk_document_activity,
     index_document_activity,
-    ingest_file_activity
+    ingest_file_activity,
+    parse_documents_to_jsonl_activity,
+    chunk_documents_to_jsonl_activity,
+    index_document_from_jsonl_activity
 )
 
 logger=get_logger(__name__)
@@ -28,7 +31,10 @@ async def main()->None:
             parse_document_activity,
             chunk_document_activity,
             index_document_activity,
-            ingest_file_activity
+            ingest_file_activity,
+            parse_documents_to_jsonl_activity,
+            chunk_documents_to_jsonl_activity,
+            index_document_from_jsonl_activity
         ]
     )
 
