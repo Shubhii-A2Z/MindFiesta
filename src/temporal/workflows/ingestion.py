@@ -8,13 +8,14 @@ from dataclasses import dataclass
 # Importing activities
 with workflow.unsafe.imports_passed_through():
     from src.temporal.activities.ingestion import (
-        # parse_document_activity,
-        # chunk_document_activity,
-        # index_document_activity,
+        parse_document_activity,
+        chunk_document_activity,
+        index_document_activity,
         ingest_file_activity
     )
 
-INDEX_BATCH_SIZE=100
+INDEX_BATCH_SIZE=2 # Number of chunks to index at a time
+DOC_BATCH_SIZE=5 # Number of documents to chunk at a time
 
 @dataclass
 class FileIngestInput:
@@ -67,12 +68,12 @@ class BatchIngestionWorkflow:
             # Marking the current file as the file being processed
             self.progress.current_filename=file_input.filename
 
-            # # running activity 1: parsing the documents
-            # document_dictionary=await workflow.execute_activity(
-            #     parse_document_activity,
-            #     args=[file_input.local_path, file_input.filename],
-            #     start_to_close_timeout=timedelta(minutes=30) # if activity isnt completed in 30 min, it will be terminated
-            # )
+            # running activity 1: parsing the documents to create Langchain Document
+            document_dictionary=await workflow.execute_activity(
+                parse_document_activity,
+                args=[file_input.local_path, file_input.filename],
+                start_to_close_timeout=timedelta(minutes=30) # if activity isnt completed in 30 min, it will be terminated
+            )
 
             # # running activity 2: chunking the parsed documents
             # chunk_dictionary=await workflow.execute_activity(
@@ -81,7 +82,35 @@ class BatchIngestionWorkflow:
             #     start_to_close_timeout=timedelta(minutes=30)
             # )
 
-            # indexed=0
+            indexed=0
+            doc_batch_size=DOC_BATCH_SIZE
+
+            # instead of chunking all documents at once, we process them in batches
+            for start in range(0, len(document_dictionary), doc_batch_size):
+                # creating batch of documents
+                doc_batch=document_dictionary[start:start+doc_batch_size]
+
+                # running activity 2: chunking the current batch of documents
+                chunk_batch=await workflow.execute_activity(
+                    chunk_document_activity,
+                    args=[doc_batch],
+                    start_to_close_timeout=timedelta(minutes=30)
+                )
+
+                # instead of indexing the chunks in one go, we process them in batches too
+                for start in range(0, len(chunk_batch), batch_size):
+                    # getting batch of chunks
+                    index_batch=chunk_batch[start:start+batch_size]
+
+                    # running activity 3: indexing the current batch of chunks
+                    count=await workflow.execute_activity(
+                        index_document_activity,
+                        args=[index_batch],
+                        start_to_close_timeout=timedelta(minutes=30),
+                        heartbeat_timeout=timedelta(minutes=5) # If activity doesnt heartbeat for 5 minutes, it will be terminated
+                    )
+                indexed+=count
+
             # # instead of indexing all chunks in one go, we process them in batches
             # for start in range(0, len(chunk_dictionary), batch_size):
             #     # getting batch of chunks
@@ -96,13 +125,13 @@ class BatchIngestionWorkflow:
             #     )
             #     indexed+=count
 
-            # Replacing the three activities with a single activity
-            indexed=await workflow.execute_activity(
-                ingest_file_activity,
-                args=[file_input.local_path, file_input.filename, batch_size],
-                start_to_close_timeout=timedelta(minutes=60),
-                heartbeat_timeout=timedelta(minutes=5)
-            )
+            # # Replacing the three activities with a single activity
+            # indexed=await workflow.execute_activity(
+            #     ingest_file_activity,
+            #     args=[file_input.local_path, file_input.filename, batch_size],
+            #     start_to_close_timeout=timedelta(minutes=60),
+            #     heartbeat_timeout=timedelta(minutes=5)
+            # )
 
             # updating the progress after each file has been indexed
             self.progress.files_completed+=1
