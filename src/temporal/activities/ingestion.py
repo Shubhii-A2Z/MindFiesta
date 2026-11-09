@@ -1,3 +1,4 @@
+import json
 from src.utils.document_chunk_writing import count_jsonl_lines
 from src.utils.document_chunk_writing import write_documents_to_jsonl
 from src.utils.document_chunk_writing import spill_path_for_upload
@@ -116,4 +117,45 @@ async def parse_documents_to_jsonl_activity(local_path: Path, filename: str)->di
         "write_path": write_path,
         "line_count": line_count,
         "staged": "parsed"
+    }
+
+
+@activity.defn(name="chunk_documents_to_jsonl_activity")
+async def chunk_documents_to_jsonl_activity(parse_path: Path, filename: str)->dict:
+    """Activity to chunk documents from a parsed jsonl file and write them to a chunks jsonl file at the disk/write path"""
+    
+    parse_path=Path(parse_path)
+
+    # Parent directory
+    upload_path=parse_path.parent.parent / Path(filename).name
+
+    # construct chunks_path for writing chunk to disk
+    chunks_path=spill_path_for_upload(upload_path=upload_path, filename=filename, stage="chunks")
+
+    service=DocumentService()
+    documents=[]
+
+    # opening the parsed jsonl file and loading the documents from the disk for chunking
+    with parse_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            text=line.strip()
+            if not text:
+                continue
+            payload=json.loads(text)
+            documents.append(Document(page_content=payload["page_content"], metadata=payload["metadata"]))
+    
+    # Chunking the documents
+    chunks=service.split_documents(documents=documents)
+
+    # Writing the chunks to the disk or chunks_path
+    count=write_documents_to_jsonl(path=chunks_path, documents=chunks)
+
+    line_count=count_jsonl_lines(path=chunks_path)
+    activity.logger.info(f"Chunked {count} documents loaded from {parse_path} with filename {filename} and written to {chunks_path}")
+
+    return {
+        "chunks_count": count,
+        "line_count": line_count,
+        "chunks_path": chunks_path,
+        "stage": "chunks"
     }
