@@ -121,8 +121,8 @@ async def parse_documents_to_jsonl_activity(local_path: Path, filename: str)->di
     }
 
 
-@activity.defn(name="chunk_documents_to_jsonl_activity")
-async def chunk_documents_to_jsonl_activity(parse_path: Path, filename: str)->dict:
+@activity.defn(name="chunk_documents_from_jsonl_activity")
+async def chunk_documents_from_jsonl_activity(parse_path: Path, filename: str)->dict:
     """Activity to chunk documents from a parsed jsonl file and write them to a chunks jsonl file at the disk/write path"""
 
     parse_path=Path(parse_path)

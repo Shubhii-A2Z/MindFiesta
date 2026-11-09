@@ -6,12 +6,8 @@ from src.utils.logger import get_logger
 from temporalio.worker import Worker
 
 from src.temporal.activities.ingestion import (
-    parse_document_activity,
-    chunk_document_activity,
-    index_document_activity,
-    ingest_file_activity,
     parse_documents_to_jsonl_activity,
-    chunk_documents_to_jsonl_activity,
+    chunk_documents_from_jsonl_activity,
     index_document_from_jsonl_activity
 )
 
@@ -28,12 +24,8 @@ async def main()->None:
         task_queue=settings.temporal_task_queue, # Which task queue will this worker poll on
         workflows=[BatchIngestionWorkflow], # What all workflows the worker has to keep an eye on
         activities=[ # What all activities the worker can run
-            parse_document_activity,
-            chunk_document_activity,
-            index_document_activity,
-            ingest_file_activity,
             parse_documents_to_jsonl_activity,
-            chunk_documents_to_jsonl_activity,
+            chunk_documents_from_jsonl_activity,
             index_document_from_jsonl_activity
         ]
     )
