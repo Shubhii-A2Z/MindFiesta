@@ -1,0 +1,79 @@
+name: Semantic Release
+
+on:
+
+  # Allows manually triggering the workflow
+  # from GitHub → Actions → Semantic Release → Run workflow
+  workflow_dispatch:
+
+
+# Permissions granted to the GITHUB_TOKEN
+# generated automatically by GitHub Actions
+permissions:
+
+  # Allows Semantic Release to:
+  # - Create and push Git tags
+  # - Push version and changelog updates
+  # - Create and update GitHub Releases
+  contents: write
+
+
+# Defines the jobs executed by this workflow
+jobs:
+
+  # Unique identifier for this job
+  release:
+
+    # Display name shown in the GitHub Actions interface
+    name: Create Release
+
+    # Runs the job on a GitHub-hosted Ubuntu machine
+    runs-on: ubuntu-latest
+
+    # Steps are executed sequentially in the order defined below
+    steps:
+
+      # --------------------------------------------------
+      # STEP 1: CHECKOUT REPOSITORY
+      # --------------------------------------------------
+
+      # Downloads your repository onto the GitHub runner
+      - name: Checkout repository
+
+        # Official GitHub action for checking out repositories
+        uses: actions/checkout@v6
+
+        with:
+
+          # Fetches the complete Git history instead of
+          # only the latest commit.
+          # Semantic Release needs commit history to analyze
+          # Conventional Commits and determine the next version.
+          fetch-depth: 0
+
+          # Prevents checkout from persisting its authentication
+          # credentials in Git configuration.
+          # Semantic Release receives its own GitHub token below.
+          persist-credentials: false
+
+
+      # --------------------------------------------------
+      # STEP 2: PYTHON SEMANTIC RELEASE
+      # --------------------------------------------------
+
+      # Executes the official Python Semantic Release action
+      - name: Python Semantic Release
+
+        # Official Python Semantic Release GitHub Action
+        # v10.7.0 pins the action to a specific release version.
+        uses: python-semantic-release/python-semantic-release@v10.7.0
+
+        with:
+
+          # Passes GitHub's automatically generated token
+          # to Python Semantic Release.
+          #
+          # This token authenticates operations such as:
+          # - Pushing release commits and tags
+          # - Creating GitHub Releases
+          github_token: ${{ secrets.GITHUB_TOKEN }}
