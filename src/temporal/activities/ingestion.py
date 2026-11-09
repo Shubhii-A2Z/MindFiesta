@@ -1,3 +1,4 @@
+from src.utils.document_chunk_writing import read_documents_from_jsonl_batch
 import json
 from src.utils.document_chunk_writing import count_jsonl_lines
 from src.utils.document_chunk_writing import write_documents_to_jsonl
@@ -123,7 +124,7 @@ async def parse_documents_to_jsonl_activity(local_path: Path, filename: str)->di
 @activity.defn(name="chunk_documents_to_jsonl_activity")
 async def chunk_documents_to_jsonl_activity(parse_path: Path, filename: str)->dict:
     """Activity to chunk documents from a parsed jsonl file and write them to a chunks jsonl file at the disk/write path"""
-    
+
     parse_path=Path(parse_path)
 
     # Parent directory
@@ -159,3 +160,22 @@ async def chunk_documents_to_jsonl_activity(parse_path: Path, filename: str)->di
         "chunks_path": chunks_path,
         "stage": "chunks"
     }
+
+
+@activity.defn(name="index_document_from_jsonl_activity")
+async def index_document_from_jsonl_activity(chunks_path: Path, offset: int, batch_size: int)->dict:
+    """Activity to index documents from a chunks jsonl file and add them to the vector store"""
+
+    chunks_path=Path(chunks_path)
+    
+    # Reading the chunks from disk in a paginated format
+    batch=read_documents_from_jsonl_batch(path=chunks_path, offset=offset, limit=batch_size)
+
+    if not batch:
+        return 0
+    
+    repository=VectorStoreRepository()
+    ids=repository.add_documents(documents=batch)
+    activity.heartbeat(f"Indexed {len(ids)} chunks from {chunks_path} with offset {offset} and batch_size {batch_size}")
+
+    return len(ids)
