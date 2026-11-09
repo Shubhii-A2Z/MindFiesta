@@ -47,10 +47,13 @@ class RAGQueryService:
         ) | prompt | self.llm | StrOutputParser()
 
 
-    async def aquery(self, question: str)->str:
+    async def aquery(self, question: str)->dict:
         """Query the RAG system with question"""
 
-        return await self.chain.ainvoke({"question": question})
+        answer=await self.chain.ainvoke({"question": question})
+        return {
+            "answer": answer
+        }
 
 
     async def aquery_with_source(self, question: str)->dict:

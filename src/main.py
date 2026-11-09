@@ -1,3 +1,4 @@
+from src.controllers import query_controller
 from src.controllers import document_controller
 from controllers import health_controller
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ app=FastAPI(
 
 app.include_router(health_controller.router)
 app.include_router(document_controller.router)
+app.include_router(query_controller.router)
 
 @app.get("/")
 async def hello()->dict[str, str]:
