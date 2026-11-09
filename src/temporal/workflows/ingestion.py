@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 from temporalio import workflow
 from dataclasses import field
@@ -83,19 +84,20 @@ class BatchIngestionWorkflow:
             chunks_count=chunk_batch["chunks_count"]
             chunks_path=chunk_batch["chunks_path"]
 
-            indexed=0
-
-            # instead of indexing the chunks in one go, we process them in batches
-            for start in range(0, chunks_count, batch_size):
-
+            # Running multiple batch indexing activity in parallel
+            index_tasks=[
                 # running activity 3: indexing the current batch of chunks
-                count=await workflow.execute_activity(
+                workflow.execute_activity(
                     index_document_from_jsonl_activity,
                     args=[chunks_path, start, batch_size],
                     start_to_close_timeout=timedelta(minutes=30),
                     heartbeat_timeout=timedelta(minutes=5) # If activity doesnt heartbeat for 5 minutes, it will be terminated
                 )
-                indexed+=count
+                for start in range(0, chunks_count, batch_size)
+            ]
+
+            batch_counts=await asyncio.gather(*index_tasks)
+            indexed=sum(batch_counts)
 
             # updating the progress after each file has been indexed
             self.progress.files_completed+=1

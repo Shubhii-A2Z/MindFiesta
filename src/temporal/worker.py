@@ -22,6 +22,7 @@ async def main()->None:
     worker=Worker(
         client=client,
         task_queue=settings.temporal_task_queue, # Which task queue will this worker poll on
+        max_concurrent_activities=settings.temporal_max_concurrent_activities, # Number of activities worker can run in parallel
         workflows=[BatchIngestionWorkflow], # What all workflows the worker has to keep an eye on
         activities=[ # What all activities the worker can run
             parse_documents_to_jsonl_activity,

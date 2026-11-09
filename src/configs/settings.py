@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     use_temporal_ingestion: bool=False
     ingestion_strategy: str=""
     upload_dir: str="uploads"
+    temporal_max_concurrent_activities: int=5
 
     # RAGAS (evaluation related configs)
     enable_ragas_evaluation: bool=False
