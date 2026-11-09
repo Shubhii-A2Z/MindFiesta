@@ -101,7 +101,7 @@ async def index_document_activity(chunks: list[dict])->int:
 
 
 @activity.defn(name="parse_documents_to_jsonl_activity")
-async def parse_documents_to_jsonl_activity(local_path: Path, filename: str)->dict:
+async def parse_documents_to_jsonl_activity(local_path: str, filename: str)->dict:
     """Activity to parse documents from local path and write them to a jsonl file at the disk/write path"""
 
     upload_path=Path(local_path)
@@ -115,14 +115,14 @@ async def parse_documents_to_jsonl_activity(local_path: Path, filename: str)->di
     line_count=count_jsonl_lines(path=write_path)
 
     return {
-        "write_path": write_path,
+        "write_path": str(write_path),
         "line_count": line_count,
         "staged": "parsed"
     }
 
 
 @activity.defn(name="chunk_documents_from_jsonl_activity")
-async def chunk_documents_from_jsonl_activity(parse_path: Path, filename: str)->dict:
+async def chunk_documents_from_jsonl_activity(parse_path: str, filename: str)->dict:
     """Activity to chunk documents from a parsed jsonl file and write them to a chunks jsonl file at the disk/write path"""
 
     parse_path=Path(parse_path)
@@ -143,7 +143,7 @@ async def chunk_documents_from_jsonl_activity(parse_path: Path, filename: str)->
             if not text:
                 continue
             payload=json.loads(text)
-            documents.append(Document(page_content=payload["page_content"], metadata=payload["metadata"]))
+            documents.append(Document(page_content=payload["file_content"], metadata=payload["metadata"]))
     
     # Chunking the documents
     chunks=service.split_documents(documents=documents)
@@ -157,13 +157,13 @@ async def chunk_documents_from_jsonl_activity(parse_path: Path, filename: str)->
     return {
         "chunks_count": count,
         "line_count": line_count,
-        "chunks_path": chunks_path,
+        "chunks_path": str(chunks_path),
         "stage": "chunks"
     }
 
 
 @activity.defn(name="index_document_from_jsonl_activity")
-async def index_document_from_jsonl_activity(chunks_path: Path, offset: int, batch_size: int)->dict:
+async def index_document_from_jsonl_activity(chunks_path: str, offset: int, batch_size: int)->int:
     """Activity to index documents from a chunks jsonl file and add them to the vector store"""
 
     chunks_path=Path(chunks_path)

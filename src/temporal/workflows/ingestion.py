@@ -95,7 +95,7 @@ class BatchIngestionWorkflow:
                     start_to_close_timeout=timedelta(minutes=30),
                     heartbeat_timeout=timedelta(minutes=5) # If activity doesnt heartbeat for 5 minutes, it will be terminated
                 )
-            indexed+=count
+                indexed+=count
 
             # updating the progress after each file has been indexed
             self.progress.files_completed+=1

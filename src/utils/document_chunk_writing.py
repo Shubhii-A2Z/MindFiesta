@@ -79,7 +79,7 @@ def read_documents_from_jsonl_batch(path: Path, offset: int, limit: int)->list[D
                 break
 
             payload=json.loads(text)
-            documents.append(Document(page_content=payload["page_content"], metadata=payload["metadata"]))
+            documents.append(Document(page_content=payload["file_content"], metadata=payload["metadata"]))
     
     return documents
 
