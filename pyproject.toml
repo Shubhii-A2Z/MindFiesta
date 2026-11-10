@@ -1,6 +1,6 @@
 [project]
 name = "youtubetranscriptrag"
-version = "1.0.0"
+version = "1.0.1"
 description = "RAG application with FastAPI, Qdrant, and Temporal"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
