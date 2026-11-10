@@ -50,7 +50,7 @@ class RAGQueryService:
     async def aquery(self, question: str)->dict:
         """Query the RAG system with question"""
 
-        answer=await self.chain.ainvoke({"question": question})
+        answer=await self.chain.ainvoke(question)
         return {
             "answer": answer
         }
@@ -59,7 +59,7 @@ class RAGQueryService:
     async def aquery_with_source(self, question: str)->dict:
         """Query the RAG system with question and return the answer and source"""
 
-        answer=await self.chain.ainvoke({"question": question})
+        answer=await self.chain.ainvoke(question)
 
         # Retrieve the list of LangChain Document objects containing the matching content and metadata.
         source=self.retriever.invoke(question)
@@ -73,7 +73,7 @@ class RAGQueryService:
     def stream(self, question: str):
         """Stream the response from the RAG system with question"""
 
-        yield from self.chain.stream({"question": question})
+        yield from self.chain.stream(question)
     
 
     def _format_source(self, docs: list[Document])->dict:
